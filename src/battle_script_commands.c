@@ -3480,6 +3480,18 @@ void SetMoveEffect(bool32 primary, u32 certain)
                 gBattleMons[gBattlerTarget].status2 |= STATUS2_ESCAPE_PREVENTION;
                 gBattleMons[gBattlerAttacker].status2 |= STATUS2_ESCAPE_PREVENTION;
                 break;
+            case MOVE_EFFECT_SKY_DROP:
+                // if rampaging, confuse the target now and cancel said rampage
+                if (gBattleMons[gBattlerTarget].status2 & STATUS2_LOCK_CONFUSE)
+                {
+                    gBattleMons[gBattlerTarget].status2 &= ~(STATUS2_LOCK_CONFUSE | STATUS2_MULTIPLETURNS);
+                    if (CanBeConfused(gBattlerTarget))
+                    {
+                        BattleScriptPush(gBattlescriptCurrInstr + 1);
+                        gBattlescriptCurrInstr = BattleScript_SkyDropConfuseRampager;
+                    }
+                }
+                break;
             }
         }
     }
@@ -5467,6 +5479,7 @@ static void Cmd_moveend(void)
             #if B_RAMPAGE_CANCELLING >= GEN_5
             if (gBattleMoves[gCurrentMove].effect == EFFECT_RAMPAGE // If we're rampaging
               && (gMoveResultFlags & MOVE_RESULT_NO_EFFECT)         // And it is unusable
+              && (!(gStatuses3[gBattlerAttacker] & STATUS3_SKY_DROP))   // And we're not being sky dropped
               && (gBattleMons[gBattlerAttacker].status2 & STATUS2_LOCK_CONFUSE) != STATUS2_LOCK_CONFUSE_TURN(1))  // And won't end this turn
                 CancelMultiTurnMoves(gBattlerAttacker); // Cancel it
             #endif

@@ -422,9 +422,9 @@ BattleScript_SkyDropSecondTurn:
 	setbyte sB_ANIM_TURN, 1
 	clearstatusfromeffect BS_ATTACKER
 	orword gHitMarker, HITMARKER_NO_PPDEDUCT
-	argumenttomoveeffect
 	clearsemiinvulnerablebit
 	clearskydrop BS_ATTACKER
+	setmoveeffect MOVE_EFFECT_SKY_DROP | MOVE_EFFECT_CERTAIN
 	goto BattleScript_HitFromAtkString
 	
 BattleScript_TargetTooHeavy::
@@ -432,7 +432,21 @@ BattleScript_TargetTooHeavy::
 	printstring STRINGID_TARGETTOOHEAVY
 	waitmessage B_WAIT_TIME_LONG
 	goto BattleScript_MoveEnd
+
+BattleScript_SkyDropperFainted::
+	savetarget
+	copybyte gBattlerTarget, sBATTLER
+	clearskydrop BS_TARGET
+	makevisible BS_TARGET
+	setmoveeffect MOVE_EFFECT_SKY_DROP | MOVE_EFFECT_CERTAIN
+	seteffectwithchance
+	restoretarget
+	return
 	
+BattleScript_SkyDropConfuseRampager::
+	setmoveeffect MOVE_EFFECT_CONFUSION | MOVE_EFFECT_CERTAIN
+	seteffectprimary
+	return
 
 BattleScript_EffectShellSideArm:
 	shellsidearmcheck

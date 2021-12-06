@@ -3162,6 +3162,21 @@ void FaintClearSetData(void)
     UndoFormChange(gBattlerPartyIndexes[gActiveBattler], GET_BATTLER_SIDE(gActiveBattler), FALSE);
     if (GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER)
         UndoMegaEvolution(gBattlerPartyIndexes[gActiveBattler]);
+    
+    if (gBattleStruct->skyDropTarget[gActiveBattler] != 0xFF)
+    {
+        // we're in mid-sky-drop. release both parties
+        u8 skyDropPair = gBattleStruct->skyDropTarget[gActiveBattler];
+        
+        gStatuses3[skyDropPair] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);   // Free the other battler
+        gBattleStruct->skyDropTarget[skyDropPair] = 0xFF;  // Sky drop pair
+        gBattleStruct->skyDropTarget[gActiveBattler] = 0xFF;    // Us
+        
+        // make other sky dropped visible and check rampaging
+        gBattleScripting.battler = skyDropPair;
+        BattleScriptPush(gBattlescriptCurrInstr + 2);
+        gBattlescriptCurrInstr = BattleScript_SkyDropperFainted - 2;   // -2 for cleareffectsonfaint
+    }
 }
 
 static void DoBattleIntro(void)

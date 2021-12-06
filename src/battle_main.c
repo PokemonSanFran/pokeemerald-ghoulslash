@@ -3163,19 +3163,22 @@ void FaintClearSetData(void)
     if (GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER)
         UndoMegaEvolution(gBattlerPartyIndexes[gActiveBattler]);
     
+    // Check sky drop
     if (gBattleStruct->skyDropTarget[gActiveBattler] != 0xFF)
     {
-        // we're in mid-sky-drop. release both parties
+        // We are mid sky-drop
         u8 skyDropPair = gBattleStruct->skyDropTarget[gActiveBattler];
-        
-        gStatuses3[skyDropPair] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);   // Free the other battler
-        gBattleStruct->skyDropTarget[skyDropPair] = 0xFF;  // Sky drop pair
-        gBattleStruct->skyDropTarget[gActiveBattler] = 0xFF;    // Us
-        
-        // make other sky dropped visible and check rampaging
-        gBattleScripting.battler = skyDropPair;
-        BattleScriptPush(gBattlescriptCurrInstr + 2);
-        gBattlescriptCurrInstr = BattleScript_SkyDropperFainted - 2;   // -2 for cleareffectsonfaint
+        gBattleStruct->skyDropTarget[gActiveBattler] = gBattleStruct->skyDropTarget[skyDropPair] = 0xFF; // reset targets
+        if (gStatuses3[skyDropPair] & STATUS3_SKY_DROP)
+        {
+            // We are the target and our captor has fainted -> we reappear
+            gStatuses3[skyDropPair] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);   // Free the target           
+            // make other sky dropped visible and check rampaging
+            gBattleScripting.battler = skyDropPair;
+            BattleScriptPush(gBattlescriptCurrInstr + 2);
+            gBattlescriptCurrInstr = BattleScript_SkyDropperFainted - 2;   // -2 for cleareffectsonfaint
+        }
+        // Otherwise, the captive mon fainted, so we will try to use sky drop but fail (see VARIOUS_CLEAR_SKY_DROP)
     }
 }
 

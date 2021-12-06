@@ -9324,6 +9324,25 @@ static void Cmd_various(void)
         gBattleStruct->skyDropTarget[gActiveBattler] = gBattleStruct->skyDropTarget[gBattlerTarget] = 0xFF;
         gStatuses3[gBattlerTarget] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);
         break;
+    case VARIOUS_JUMP_IF_SKY_DROP_FAILS:
+        /* * Pokémon with the Levitate Ability and Flying-Type Pokémon are invulnerable to this attack
+           * unless they've been hit by the move Smack Down and are under its effect, or are holding the Hold Item Iron Ball. 
+           * A target that has used Magnet Rise or under the effect of Telekinesis will still take damage as usual.
+           
+           * If there is no target, e.g. the dropee fainted mid sky-drop, it fails
+        */
+        if (gBattleStruct->skyDropTarget[gBattlerAttacker] == 0xFF)
+            gBattlescriptCurrInstr = T1_READ_PTR(gBattlescriptCurrInstr + 7);
+        else if ((IS_BATTLER_OF_TYPE(gActiveBattler, TYPE_FLYING) || GetBattlerAbility(gActiveBattler) == ABILITY_LEVITATE)
+          && !((gStatuses3[gActiveBattler] & STATUS3_SMACKED_DOWN) || GetBattlerHoldEffect(gActiveBattler, TRUE) == HOLD_EFFECT_IRON_BALL))
+            gBattlescriptCurrInstr = T1_READ_PTR(gBattlescriptCurrInstr + 3);   // fail from flying type
+        else
+            gBattlescriptCurrInstr += 11;
+        
+        // Clear sky drop
+        gBattleStruct->skyDropTarget[gBattlerAttacker] = gBattleStruct->skyDropTarget[gBattlerTarget] = 0xFF;
+        gStatuses3[gBattlerTarget] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);
+        return; 
     } // End of switch (gBattlescriptCurrInstr[2])
 
     gBattlescriptCurrInstr += 3;

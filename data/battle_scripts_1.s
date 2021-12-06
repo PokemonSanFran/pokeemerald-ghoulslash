@@ -423,9 +423,28 @@ BattleScript_SkyDropSecondTurn:
 	clearstatusfromeffect BS_ATTACKER
 	orword gHitMarker, HITMARKER_NO_PPDEDUCT
 	clearsemiinvulnerablebit
-	clearskydrop BS_ATTACKER
 	setmoveeffect MOVE_EFFECT_SKY_DROP | MOVE_EFFECT_CERTAIN
-	goto BattleScript_HitFromAtkString
+	attackstring
+	jumpifskydropfails BS_TARGET, BattleScript_SkyDropInvulnerable, BattleScript_SkyDropFailed
+	goto BattleScript_HitFromCritCalc
+
+@ if our target fainted before we can drop them
+BattleScript_SkyDropFailed::
+	pause B_WAIT_TIME_SHORT
+	printstring STRINGID_BUTITFAILED
+	waitmessage B_WAIT_TIME_LONG
+	makevisible BS_ATTACKER
+	goto BattleScript_MoveEnd
+	
+@ if our target is flying/levitating
+BattleScript_SkyDropInvulnerable::
+	pause B_WAIT_TIME_SHORT
+	makevisible BS_TARGET
+	printstring STRINGID_ITDOESNTAFFECT
+	waitmessage B_WAIT_TIME_LONG
+	makevisible BS_ATTACKER
+	seteffectwithchance		@ try to confuse rampaging mon
+	goto BattleScript_MoveEnd
 	
 BattleScript_TargetTooHeavy::
 	pause B_WAIT_TIME_SHORT

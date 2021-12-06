@@ -210,6 +210,7 @@
 #define VARIOUS_TRY_END_NEUTRALIZING_GAS        137
 #define VARIOUS_SET_SKY_DROP                    138
 #define VARIOUS_CLEAR_SKY_DROP                  139 
+#define VARIOUS_JUMP_IF_SKY_DROP_FAILS          140
 
 // Cmd_manipulatedamage
 #define DMG_CHANGE_SIGN            0

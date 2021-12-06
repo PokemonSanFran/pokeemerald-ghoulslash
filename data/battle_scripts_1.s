@@ -403,6 +403,36 @@ gBattleScriptsForMoveEffects::
 	.4byte BattleScript_EffectOctolock                @ EFFECT_OCTOLOCK
 	.4byte BattleScript_EffectClangorousSoul          @ EFFECT_CLANGOROUS_SOUL
 	.4byte BattleScript_EffectHit                     @ EFFECT_BOLT_BEAK
+	.4byte BattleScript_EffectSkyDrop                 @ EFFECT_SKY_DROP
+
+BattleScript_EffectSkyDrop:
+	jumpifstatus2 BS_ATTACKER, STATUS2_MULTIPLETURNS, BattleScript_SkyDropSecondTurn
+	attackcanceler
+	accuracycheck BattleScript_PrintMoveMissed, ACC_CURR_MOVE
+	attackstring
+	ppreduce
+	setskydrop BS_ATTACKER, BattleScript_ButItFailed
+	setbyte sTWOTURN_STRINGID, B_MSG_TURN1_SKY_DROP
+	call BattleScriptFirstChargingTurnFromPause
+	goto BattleScript_MoveEnd
+
+BattleScript_SkyDropSecondTurn:
+	attackcanceler
+	setmoveeffect MOVE_EFFECT_CHARGING
+	setbyte sB_ANIM_TURN, 1
+	clearstatusfromeffect BS_ATTACKER
+	orword gHitMarker, HITMARKER_NO_PPDEDUCT
+	argumenttomoveeffect
+	clearsemiinvulnerablebit
+	clearskydrop BS_ATTACKER
+	goto BattleScript_HitFromAtkString
+	
+BattleScript_TargetTooHeavy::
+	pause B_WAIT_TIME_SHORT
+	printstring STRINGID_TARGETTOOHEAVY
+	waitmessage B_WAIT_TIME_LONG
+	goto BattleScript_MoveEnd
+	
 
 BattleScript_EffectShellSideArm:
 	shellsidearmcheck
@@ -3400,6 +3430,7 @@ BattleScriptFirstChargingTurn::
 	printstring STRINGID_EMPTYSTRING3
 	ppreduce
 	attackstring
+BattleScriptFirstChargingTurnFromPause:
 	pause B_WAIT_TIME_LONG
 	copybyte cMULTISTRING_CHOOSER, sTWOTURN_STRINGID
 	printfromtable gFirstTurnOfTwoStringIds

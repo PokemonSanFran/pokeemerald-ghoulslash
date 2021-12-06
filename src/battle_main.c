@@ -2872,6 +2872,7 @@ static void BattleStartClearSetData(void)
         gBattleStruct->lastTakenMoveFrom[i][2] = 0;
         gBattleStruct->lastTakenMoveFrom[i][3] = 0;
         gBattleStruct->AI_monToSwitchIntoId[i] = PARTY_SIZE;
+        gBattleStruct->skyDropTarget[i] = 0xFF;
     }
 
     gLastUsedMove = 0;

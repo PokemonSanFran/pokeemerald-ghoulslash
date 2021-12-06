@@ -1398,7 +1398,8 @@ static void Cmd_attackcanceler(void)
         gCurrentActionFuncId = B_ACTION_FINISHED;
         return;
     }
-    if (gBattleMons[gBattlerAttacker].hp == 0 && !(gHitMarker & HITMARKER_NO_ATTACKSTRING))
+    if ((gBattleMons[gBattlerAttacker].hp == 0 || gStatuses3[gBattlerAttacker] & STATUS3_SKY_DROP)
+      && !(gHitMarker & HITMARKER_NO_ATTACKSTRING))
     {
         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
         gBattlescriptCurrInstr = BattleScript_MoveEnd;
@@ -1623,10 +1624,10 @@ static bool32 AccuracyCalcHelper(u16 move)
     }
 
     if ((gStatuses3[gBattlerTarget] & STATUS3_PHANTOM_FORCE)
-        || (!(gBattleMoves[move].flags & FLAG_DMG_IN_AIR) && gStatuses3[gBattlerTarget] & STATUS3_ON_AIR)
-        || (!(gBattleMoves[move].flags & FLAG_DMG_2X_IN_AIR) && gStatuses3[gBattlerTarget] & STATUS3_ON_AIR)
-        || (!(gBattleMoves[move].flags & FLAG_DMG_UNDERGROUND) && gStatuses3[gBattlerTarget] & STATUS3_UNDERGROUND)
-        || (!(gBattleMoves[move].flags & FLAG_DMG_UNDERWATER) && gStatuses3[gBattlerTarget] & STATUS3_UNDERWATER))
+      || (!(gBattleMoves[move].flags & (FLAG_DMG_IN_AIR | FLAG_DMG_2X_IN_AIR)) && gStatuses3[gBattlerTarget] & STATUS3_ON_AIR
+        && gBattleStruct->skyDropTarget[gBattlerAttacker] != gBattlerTarget)
+      || (!(gBattleMoves[move].flags & FLAG_DMG_UNDERGROUND) && gStatuses3[gBattlerTarget] & STATUS3_UNDERGROUND)
+      || (!(gBattleMoves[move].flags & FLAG_DMG_UNDERWATER) && gStatuses3[gBattlerTarget] & STATUS3_UNDERWATER))
     {
         gMoveResultFlags |= MOVE_RESULT_MISSED;
         JumpIfMoveFailed(7, move);
@@ -3319,7 +3320,7 @@ void SetMoveEffect(bool32 primary, u32 certain)
                 if (!IsBattlerGrounded(gBattlerTarget))
                 {
                     gStatuses3[gBattlerTarget] |= STATUS3_SMACKED_DOWN;
-                    gStatuses3[gBattlerTarget] &= ~(STATUS3_MAGNET_RISE | STATUS3_TELEKINESIS | STATUS3_ON_AIR);
+                    gStatuses3[gBattlerTarget] &= ~(STATUS3_MAGNET_RISE | STATUS3_TELEKINESIS | STATUS3_ON_AIR | STATUS3_SKY_DROP);
                     BattleScriptPush(gBattlescriptCurrInstr + 1);
                     gBattlescriptCurrInstr = BattleScript_MoveEffectSmackDown;
                 }
@@ -7684,10 +7685,10 @@ static void Cmd_various(void)
         }
         return;
     case VARIOUS_GRAVITY_ON_AIRBORNE_MONS:
-        if (gStatuses3[gActiveBattler] & STATUS3_ON_AIR)
+        if (gStatuses3[gActiveBattler] & (STATUS3_ON_AIR | STATUS3_SKY_DROP))
             CancelMultiTurnMoves(gActiveBattler);
 
-        gStatuses3[gActiveBattler] &= ~(STATUS3_MAGNET_RISE | STATUS3_TELEKINESIS | STATUS3_ON_AIR);
+        gStatuses3[gActiveBattler] &= ~(STATUS3_MAGNET_RISE | STATUS3_TELEKINESIS | STATUS3_ON_AIR | STATUS3_SKY_DROP);
         break;
     case VARIOUS_SPECTRAL_THIEF:
         // Raise stats
@@ -9281,6 +9282,35 @@ static void Cmd_various(void)
             gBattlescriptCurrInstr += 7;
         return;
     }
+    case VARIOUS_SET_SKY_DROP:
+        if ((gStatuses3[gActiveBattler] & STATUS3_SKY_DROP)
+          || DoesSubstituteBlockMove(gActiveBattler, gBattlerTarget, gCurrentMove)
+          || GetBattlerSide(gBattlerAttacker) == GetBattlerSide(gBattlerTarget))
+        {
+            gBattlescriptCurrInstr = T1_READ_PTR(gBattlescriptCurrInstr + 3);   // fail
+        }
+        else if (GetPokedexHeightWeight(SpeciesToNationalPokedexNum(gBattleMons[gBattlerTarget].species), 1) >= 441) // must be under 200 kgs
+        {
+            gBattlescriptCurrInstr = BattleScript_TargetTooHeavy;
+        }
+        else
+        {
+            gBattleMons[gBattlerTarget].status2 &= ~(STATUS2_MULTIPLETURNS | STATUS2_UPROAR | STATUS2_BIDE);   // keep STATUS2_LOCK_CONFUSE for now
+            gStatuses3[gBattlerTarget] &= ~(STATUS3_SEMI_INVULNERABLE);
+            gDisableStructs[gBattlerTarget].rolloutTimer = 0;
+            gDisableStructs[gBattlerTarget].furyCutterCounter = 0;
+            
+            gBattleStruct->skyDropTarget[gActiveBattler] = gBattlerTarget;
+            gBattleStruct->skyDropTarget[gBattlerTarget] = gActiveBattler;
+            gStatuses3[gActiveBattler] |= (STATUS3_ON_AIR);
+            gStatuses3[gBattlerTarget] |= (STATUS3_SKY_DROP | STATUS3_ON_AIR);
+            gBattlescriptCurrInstr += 7;
+        }
+        return;
+    case VARIOUS_CLEAR_SKY_DROP:
+        gBattleStruct->skyDropTarget[gActiveBattler] = gBattleStruct->skyDropTarget[gBattlerTarget] = 0xFF;
+        gStatuses3[gBattlerTarget] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);
+        break;
     } // End of switch (gBattlescriptCurrInstr[2])
 
     gBattlescriptCurrInstr += 3;
@@ -11209,7 +11239,8 @@ static bool8 IsTwoTurnsMove(u16 move)
         || gBattleMoves[move].effect == EFFECT_TWO_TURNS_ATTACK
         || gBattleMoves[move].effect == EFFECT_SOLARBEAM
         || gBattleMoves[move].effect == EFFECT_SEMI_INVULNERABLE
-        || gBattleMoves[move].effect == EFFECT_BIDE)
+        || gBattleMoves[move].effect == EFFECT_BIDE
+        || gBattleMoves[move].effect == EFFECT_SKY_DROP)
         return TRUE;
     else
         return FALSE;
@@ -12001,6 +12032,7 @@ static void Cmd_setsemiinvulnerablebit(void)
     {
     case MOVE_FLY:
     case MOVE_BOUNCE:
+    case MOVE_SKY_DROP:
         gStatuses3[gBattlerAttacker] |= STATUS3_ON_AIR;
         break;
     case MOVE_DIG:

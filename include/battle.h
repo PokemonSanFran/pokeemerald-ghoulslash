@@ -616,6 +616,7 @@ struct BattleStruct
     u8 blunderPolicy:1; // should blunder policy activate
     u8 ballSpriteIds[2];    // item gfx, window gfx
     u8 stickyWebUser;
+    u8 skyDropTarget[MAX_BATTLERS_COUNT];
 };
 
 #define GET_MOVE_TYPE(move, typeArg)                        \

@@ -1924,6 +1924,15 @@
 	.macro shellsidearmcheck
 	various BS_ATTACKER, VARIOUS_SHELL_SIDE_ARM_CHECK
 	.endm
+	
+	.macro setskydrop battler:req, fail:req
+	various \battler, VARIOUS_SET_SKY_DROP
+	.4byte \fail
+	.endm
+	
+	.macro clearskydrop battler:req
+	various \battler, VARIOUS_CLEAR_SKY_DROP
+	.endm
 
 @ helpful macros
 	.macro setstatchanger stat:req, stages:req, down:req

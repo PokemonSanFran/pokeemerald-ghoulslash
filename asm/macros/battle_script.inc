@@ -1930,9 +1930,9 @@
 	.4byte \fail
 	.endm
 	
-	.macro clearskydrop battler:req, ptr=NULL
+	.macro clearskydrop battler:req, handleYawn=FALSE
 	various \battler, VARIOUS_CLEAR_SKY_DROP
-	.4byte \ptr
+	.byte \handleYawn
 	.endm
 	
 	.macro jumpifskydropfails battler:req, ptrFlying:req, ptrNoTarget:req

@@ -9321,9 +9321,25 @@ static void Cmd_various(void)
         }
         return;
     case VARIOUS_CLEAR_SKY_DROP:
-        gBattleStruct->skyDropTarget[gActiveBattler] = gBattleStruct->skyDropTarget[gBattlerTarget] = 0xFF;
-        gStatuses3[gBattlerTarget] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);
-        break;
+        // Check yawn - we are holding a mon and fell asleep from yawn -> release the target
+        if (gBattlescriptCurrInstr[3] && gStatuses3[gBattleStruct->skyDropTarget[gActiveBattler]] & STATUS3_SKY_DROP)
+        {
+            gBattleScripting.battler = gBattleStruct->skyDropTarget[gActiveBattler];
+            BattleScriptPush(gBattlescriptCurrInstr + 4);
+            gBattlescriptCurrInstr = BattleScript_SkyDropperFainted;
+        }
+        else
+        {
+            gBattlescriptCurrInstr += 4;
+        }
+        
+        gStatuses3[gBattleStruct->skyDropTarget[gActiveBattler]] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);
+        gStatuses3[gActiveBattler] &= ~STATUS3_ON_AIR;
+        if (gBattleStruct->skyDropTarget[gActiveBattler] != 0xFF)
+            gBattleStruct->skyDropTarget[gActiveBattler] = 0xFF;
+        if (gBattleStruct->skyDropTarget[gBattleStruct->skyDropTarget[gActiveBattler]] != 0xFF)
+            gBattleStruct->skyDropTarget[gBattleStruct->skyDropTarget[gActiveBattler]] = 0xFF;
+        return;
     case VARIOUS_JUMP_IF_SKY_DROP_FAILS:
         /* * Pokémon with the Levitate Ability and Flying-Type Pokémon are invulnerable to this attack
            * unless they've been hit by the move Smack Down and are under its effect, or are holding the Hold Item Iron Ball. 
@@ -9342,7 +9358,7 @@ static void Cmd_various(void)
         // Clear sky drop
         gBattleStruct->skyDropTarget[gBattlerAttacker] = gBattleStruct->skyDropTarget[gBattlerTarget] = 0xFF;
         gStatuses3[gBattlerTarget] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);
-        return; 
+        return;
     } // End of switch (gBattlescriptCurrInstr[2])
 
     gBattlescriptCurrInstr += 3;

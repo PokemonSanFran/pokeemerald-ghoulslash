@@ -7576,6 +7576,7 @@ BattleScript_YawnMakesAsleep::
 	updatestatusicon BS_EFFECT_BATTLER
 	waitstate
 	makevisible BS_EFFECT_BATTLER
+	clearskydrop BS_EFFECT_BATTLER, TRUE
 	end2
 
 BattleScript_EmbargoEndTurn::

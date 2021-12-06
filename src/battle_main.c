@@ -3741,6 +3741,12 @@ u8 IsRunningFromBattleImpossible(void)
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CANT_ESCAPE;
         return 1;
     }
+    
+    if (gStatuses3[gActiveBattler] & STATUS3_SKY_DROP)
+    {
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CANT_ESCAPE;
+        return 1;
+    }
 
     if (holdEffect == HOLD_EFFECT_CAN_ALWAYS_RUN)
         return 0;
@@ -3920,7 +3926,8 @@ static void HandleTurnActionSelectionState(void)
                     if (gBattleTypeFlags & (BATTLE_TYPE_LINK
                                             | BATTLE_TYPE_FRONTIER_NO_PYRAMID
                                             | BATTLE_TYPE_EREADER_TRAINER
-                                            | BATTLE_TYPE_RECORDED_LINK))
+                                            | BATTLE_TYPE_RECORDED_LINK)
+                                          || gStatuses3[gActiveBattler] & STATUS3_SKY_DROP) // Cannot use an item on mid sky-drop battler
                     {
                         RecordedBattle_ClearBattlerAction(gActiveBattler, 1);
                         gSelectionBattleScripts[gActiveBattler] = BattleScript_ActionSelectionItemsCantBeUsed;

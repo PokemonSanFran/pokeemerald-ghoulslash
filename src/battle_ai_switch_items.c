@@ -515,7 +515,8 @@ void AI_TrySwitchOrUseItem(void)
     else
         party = gEnemyParty;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER
+      && !(gStatuses3[gActiveBattler] & STATUS3_SKY_DROP))  // Cannot switch or use an item mid sky-drop
     {
         if (ShouldSwitch())
         {

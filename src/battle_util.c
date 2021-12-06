@@ -2772,8 +2772,9 @@ u8 DoBattlerEndTurnEffects(void)
                 gBattleStruct->turnEffectsTracker++;
             break;
         case ENDTURN_THRASH:  // thrash
-            if (gBattleMons[gActiveBattler].status2 & STATUS2_LOCK_CONFUSE)
+            if (gBattleMons[gActiveBattler].status2 & STATUS2_LOCK_CONFUSE && ~(gStatuses3[gActiveBattler] & STATUS3_SKY_DROP))
             {
+                // Decrement fatigue counter unless being held in sky drop
                 gBattleMons[gActiveBattler].status2 -= STATUS2_LOCK_CONFUSE_TURN(1);
                 if (WasUnableToUseMove(gActiveBattler))
                     CancelMultiTurnMoves(gActiveBattler);
@@ -4886,7 +4887,7 @@ u8 AbilityBattleEffects(u8 caseID, u8 battler, u16 ability, u8 special, u16 move
              && gBattleMons[battler].hp < gBattleMons[battler].maxHP / 2
              && (gMultiHitCounter == 0 || gMultiHitCounter == 1)
              && !(TestSheerForceFlag(gBattlerAttacker, gCurrentMove))
-             && !(gStatuses3[battler] & STATUS3_SKY_DROP)
+             && !(gStatuses3[battler] & STATUS3_SKY_DROP)   // Do not activate when mid sky drop
              && (CanBattlerSwitch(battler) || !(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
              && !(gBattleTypeFlags & BATTLE_TYPE_ARENA)
              && CountUsablePartyMons(battler) > 0)
@@ -5750,6 +5751,8 @@ bool32 CanBattlerEscape(u32 battlerId) // no ability check
     else if (gStatuses3[battlerId] & STATUS3_ROOTED)
         return FALSE;
     else if (gFieldStatuses & STATUS_FIELD_FAIRY_LOCK)
+        return FALSE;
+    else if (gStatuses3[battlerId] & STATUS3_SKY_DROP)
         return FALSE;
     else
         return TRUE;
@@ -9121,6 +9124,10 @@ bool32 CanMegaEvolve(u8 battlerId)
      && !CheckBagHasItem(ITEM_MEGA_RING, 1))
         return FALSE;
 #endif
+    
+    // Cannot mega evolve mid sky-drop
+    if (gStatuses3[battlerId] & STATUS3_SKY_DROP)
+        return FALSE;
 
     // Check if trainer already mega evolved a pokemon.
     if (mega->alreadyEvolved[battlerPosition])

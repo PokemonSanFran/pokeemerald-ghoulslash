@@ -1089,7 +1089,7 @@ static const u16 sMoveEffectsForbiddenToInstruct[] =
     EFFECT_SEMI_INVULNERABLE,
     //EFFECT_SHELL_TRAP,
     EFFECT_SKETCH,
-    //EFFECT_SKY_DROP,
+    EFFECT_SKY_DROP,
     EFFECT_SKULL_BASH,
     EFFECT_SLEEP_TALK,
     EFFECT_SOLARBEAM,
@@ -7701,7 +7701,13 @@ static void Cmd_various(void)
         if (gStatuses3[gActiveBattler] & (STATUS3_ON_AIR | STATUS3_SKY_DROP))
             CancelMultiTurnMoves(gActiveBattler);
 
-        gStatuses3[gActiveBattler] &= ~(STATUS3_MAGNET_RISE | STATUS3_TELEKINESIS | STATUS3_ON_AIR | STATUS3_SKY_DROP);
+        gStatuses3[gActiveBattler] &= ~(STATUS3_MAGNET_RISE | STATUS3_TELEKINESIS | STATUS3_ON_AIR);
+        if (gStatuses3[gActiveBattler] & STATUS3_SKY_DROP)
+        {
+            gStatuses3[gActiveBattler] &= ~STATUS3_SKY_DROP;
+            gBattleStruct->skyDropTarget[gBattleStruct->skyDropTarget[gActiveBattler]] = 0xFF;
+            gBattleStruct->skyDropTarget[gActiveBattler] = 0xFF;
+        }
         break;
     case VARIOUS_SPECTRAL_THIEF:
         // Raise stats
@@ -8910,7 +8916,8 @@ static void Cmd_various(void)
                     MarkBattlerForControllerExec(gActiveBattler);
                 }
                 
-                if (gBattleMons[gActiveBattler].pp[i] == 0)
+                // Cancel multi-turn moves if they're brought to 0 PP unless we're mid sky-drop
+                if (gBattleMons[gActiveBattler].pp[i] == 0 && gBattleStruct->skyDropTarget[gActiveBattler] != 0xFF)
                     CancelMultiTurnMoves(gActiveBattler);
                 
                 gBattlescriptCurrInstr += 7;    // continue
@@ -9335,10 +9342,10 @@ static void Cmd_various(void)
         
         gStatuses3[gBattleStruct->skyDropTarget[gActiveBattler]] &= ~(STATUS3_SKY_DROP | STATUS3_ON_AIR);
         gStatuses3[gActiveBattler] &= ~STATUS3_ON_AIR;
-        if (gBattleStruct->skyDropTarget[gActiveBattler] != 0xFF)
-            gBattleStruct->skyDropTarget[gActiveBattler] = 0xFF;
         if (gBattleStruct->skyDropTarget[gBattleStruct->skyDropTarget[gActiveBattler]] != 0xFF)
             gBattleStruct->skyDropTarget[gBattleStruct->skyDropTarget[gActiveBattler]] = 0xFF;
+        if (gBattleStruct->skyDropTarget[gActiveBattler] != 0xFF)
+            gBattleStruct->skyDropTarget[gActiveBattler] = 0xFF;
         return;
     case VARIOUS_JUMP_IF_SKY_DROP_FAILS:
         /* * Pokémon with the Levitate Ability and Flying-Type Pokémon are invulnerable to this attack
@@ -11434,7 +11441,8 @@ static void Cmd_tryspiteppreduce(void)
 
             gBattlescriptCurrInstr += 5;
 
-            if (gBattleMons[gBattlerTarget].pp[i] == 0)
+            // Cancel multi-turn effects if spite brings pp to 0 except if target is mid sky drop
+            if (gBattleMons[gBattlerTarget].pp[i] == 0 && gBattleStruct->skyDropTarget[gBattlerTarget] != 0xFF)
                 CancelMultiTurnMoves(gBattlerTarget);
         }
         else
